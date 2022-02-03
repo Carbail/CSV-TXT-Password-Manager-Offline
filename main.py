@@ -1,7 +1,9 @@
+from email import message
 from tkinter import *
 from random import choice, randint, shuffle
 from tkinter import messagebox
 import pyperclip
+import json
 # ---------------------------- PASSWORD GENERATOR ------------------------------- #
 
 def generar():
@@ -29,25 +31,48 @@ def guardar():
     site=E_site.get()
     email=E_email.get()
     password=E_password.get()
+    new_data={
+        site:{
+            "email":email,
+            "password":password,
+        }
+        
+        }
     
     if site == "" or email=="" or password=="" or email==ejemplo_mail:
         messagebox.showwarning(title="Error", message="Falta algún campo por rellenar")
     else:
-    
-        ok=messagebox.askokcancel(title=site, message=f"Estos son los datos que ha introducido: \nEmail: {email} \n Password: {password} \n¿Es correcto?")
-        
-        if ok==True:
-        
-            with open("MisContraseñas.txt","a") as f:
-                f.write(f"{site},{email},{password}\n")
-            
-            with open("MisContraseñas.csv","a") as f:
-                f.write(f"{site},{email},{password}\n")
-            
-            E_password.delete(0,END)
-            E_email.delete(0,END)
+            try:
+                with open("data.json", "r") as data_file:
+                  
+                    data = json.load(data_file)
+            except FileNotFoundError:
+                with open("data.json", "w") as data_file:
+                    json.dump(new_data, data_file, indent=4)
+            else:              
+                data.update(new_data)
+                with open("data.json", "w") as data_file:
+                    json.dump(data, data_file, indent=4)
+            finally:
+               E_site.delete(0, END)
+               E_password.delete(0, END)
 
-
+# ---------------------------- BUSCAR ------------------------------- #
+def Buscar():
+    site = E_site.get()
+    try:
+        with open("data.json") as data_file:
+            data = json.load(data_file)
+    except FileNotFoundError:
+        messagebox.showinfo(title="Error", message="No hay un archivo con datos")
+    else:
+        if site in data:
+            email = data[site]["email"]
+            password = data[site]["password"]
+            messagebox.showinfo(title=site, message=f"Email: {email}\nPassword: {password}")
+        else:
+            messagebox.showinfo(title="Error", message=f"Sin detalles si {site} existe. ")
+        
 
 
 # ---------------------------- UI SETUP ------------------------------- #
@@ -86,6 +111,9 @@ B_genera_password.grid(row=3,column=2)
 
 B_anyade=Button(text="Añadir", command=guardar)
 B_anyade.grid(row=4,column=1,columnspan=2)
+
+B_Buscar=Button(text="Buscar",command=Buscar)
+B_Buscar.grid(row=1,column=3)
 
 
 ventana.mainloop()
